@@ -155,19 +155,19 @@ function populateCategories() {
 }
 
 function filterQuotes() {
-  const selected = document.getElementById("categoryFilter").value;
+  const selectedCategory = document.getElementById("categoryFilter").value;
   const quoteDisplay = document.getElementById("quoteDisplay");
 
-  localStorage.setItem(LAST_FILTER_KEY, selected);
+  localStorage.setItem(LAST_FILTER_KEY, selectedCategory);
 
   quoteDisplay.innerHTML = "";
 
-  if (selected === "all") {
+  if (selectedCategory === "all") {
     showRandomQuote();
     return;
   }
 
-  const filtered = quotes.filter(q => q.category === selected);
+  const filtered = quotes.filter(q => q.category === selectedCategory);
 
   if (!filtered.length) {
     quoteDisplay.innerHTML = "<p>No quotes available in this category.</p>";
