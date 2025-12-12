@@ -229,63 +229,73 @@ document.addEventListener('DOMContentLoaded', function() {
 const SERVER_URL = "https://jsonplaceholder.typicode.com/posts";
 const LAST_SYNC_KEY = "lastServerSync";
 
-function fetchQuotesFromServer() {
-  return fetch(SERVER_URL)
-    .then(res => res.json())
-    .then(data => {
-      return data.slice(0, 5).map(item => ({
-        text: item.title,
-        category: "Server"
-      }));
-    })
-    .catch(() => []);
+async function fetchQuotesFromServer() {
+    try {
+        const response = await fetch(SERVER_URL);
+        const data = await response.json();
+
+        return data.slice(0, 5).map(item => ({
+            text: item.title,
+            category: "Server"
+        }));
+    } catch (error) {
+        console.error("Server fetch failed:", error);
+        return [];
+    }
 }
 
-function syncWithServer() {
-  fetchQuotesFromServer().then(serverQuotes => {
+async function syncWithServer() {
+    const serverQuotes = await fetchQuotesFromServer();
     if (!serverQuotes.length) return;
 
-    let localTexts = new Set(quotes.map(q => q.text));
-    let serverTexts = new Set(serverQuotes.map(q => q.text));
+    const localTexts = new Set(quotes.map(q => q.text));
+    const serverTexts = new Set(serverQuotes.map(q => q.text));
 
-    let newServerQuotes = serverQuotes.filter(q => !localTexts.has(q.text));
-    let conflicts = quotes.filter(q => serverTexts.has(q.text));
+    const newServerQuotes = serverQuotes.filter(q => !localTexts.has(q.text));
+    const conflicts = quotes.filter(q => serverTexts.has(q.text));
 
     if (conflicts.length > 0) {
-      conflicts.forEach(conflict => {
-        let serverVersion = serverQuotes.find(sq => sq.text === conflict.text);
-        conflict.category = serverVersion.category;
-      });
-      alert("Conflict resolved using server data.");
+        conflicts.forEach(conflict => {
+            const serverVersion = serverQuotes.find(sq => sq.text === conflict.text);
+            conflict.category = serverVersion.category;
+        });
+        alert("Conflict resolved using server data.");
     }
 
     if (newServerQuotes.length > 0) {
-      quotes.push(...newServerQuotes);
-      alert("New data received from server.");
+        quotes.push(...newServerQuotes);
+        alert("New data received from server.");
     }
 
     saveQuotes();
     populateCategories();
 
     localStorage.setItem(LAST_SYNC_KEY, Date.now());
-  });
 }
 
-function postLocalQuotesToServer() {
-  quotes.forEach(q => {
-    fetch(SERVER_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(q)
-    }).catch(() => {});
-  });
+async function postLocalQuotesToServer() {
+    for (const q of quotes) {
+        try {
+            await fetch(SERVER_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(q)
+            });
+        } catch (err) {
+            console.warn("Failed to sync one quote:", err);
+        }
+    }
 }
 
-setInterval(syncWithServer, 10000);
-
-document.addEventListener("DOMContentLoaded", function () {
-  const lastSync = localStorage.getItem(LAST_SYNC_KEY);
-  if (!lastSync) {
+// Runs every 10 seconds
+setInterval(() => {
     syncWithServer();
-  }
+}, 10000);
+
+document.addEventListener("DOMContentLoaded", async function () {
+    const lastSync = localStorage.getItem(LAST_SYNC_KEY);
+
+    if (!lastSync) {
+        await syncWithServer();
+    }
 });
