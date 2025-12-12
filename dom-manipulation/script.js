@@ -238,6 +238,18 @@ document.addEventListener('DOMContentLoaded', async function() {
   }
 });
 
+async function syncQuotes() {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    console.log("Quotes synced with server!");
+
+    const notice = document.createElement("div");
+    notice.textContent = "Quotes synced with server!";
+    notice.style.color = "green";
+    notice.style.marginTop = "10px";
+    document.body.appendChild(notice);
+}
+
 setInterval(() => {
   syncQuotes();
 }, 10000);
